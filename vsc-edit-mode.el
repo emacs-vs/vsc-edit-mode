@@ -60,7 +60,7 @@
     (define-key map (kbd "S-<backspace>") #'vsc-edit-backspace)
     (define-key map (kbd "<delete>") #'vsc-edit-delete)
     (define-key map (kbd "SPC") #'vsc-edit-space)
-    (define-key map (kbd "S-SPC") #'vsc-edit-space)
+    (define-key map (kbd "S-SPC") #'vsc-edit-real-space)
     (define-key map (kbd "C-v") #'vsc-edit-yank)
     (define-key map [tab] #'vsc-edit-tab)
     (define-key map (kbd "TAB") #'vsc-edit-tab)
