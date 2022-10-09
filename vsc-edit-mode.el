@@ -41,7 +41,7 @@
   :group 'tool
   :link '(url-link :tag "Repository" "https://github.com/emacs-vs/vsc-edit-mode"))
 
-(defcustom vsc-edit-prg-modes
+(defcustom vsc-edit-prog-modes
   '(actionscript-mode haxe-mode nxml-mode yaml-mode)
   "List of extra `prog-mode'."
   :type 'list
@@ -113,7 +113,7 @@
 (defun vsc-edit-prog-mode-p ()
   "Return non-nil if current buffer is programmer mode."
   (or (derived-mode-p 'prog-mode)
-      (memq major-mode vsc-edit-prg-modes)))
+      (memq major-mode vsc-edit-prog-modes)))
 
 ;;
 ;; (@* "Backspace" )
