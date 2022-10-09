@@ -41,6 +41,12 @@
   :group 'tool
   :link '(url-link :tag "Repository" "https://github.com/emacs-vs/vsc-edit-mode"))
 
+(defcustom vsc-edit-prg-modes
+  '(actionscript-mode haxe-mode nxml-mode yaml-mode)
+  "List of extra `prog-mode'."
+  :type 'list
+  :group 'vsc-edit)
+
 ;;
 ;; (@* "Entry" )
 ;;
@@ -56,21 +62,12 @@
     map)
   "Keymap for `execrun-mode'.")
 
-(defun vsc-edit-mode--enable ()
-  "Enable `vsc-edit'."
-  )
-
-(defun vsc-edit-mode--disable ()
-  "Disable `vsc-edit'."
-  )
-
 ;;;###autoload
 (define-minor-mode vsc-edit-mode
   "Minor mode `vsc-edit'."
   :group vsc-edit
   :lighter nil
-  :keymap vsc-edit-mode-map
-  (if vsc-edit (vsc-edit-mode--enable) (vsc-edit-mode--disable)))
+  :keymap vsc-edit-mode-map)
 
 (defun vsc-edit-mode--turn-on ()
   "Turn on the `vsc-edit'."
@@ -113,6 +110,11 @@
   "Check if current character a whitespace character."
   (vsc-edit--current-char-equal-p " "))
 
+(defun vsc-edit-prog-mode-p ()
+  "Return non-nil if current buffer is programmer mode."
+  (or (derived-mode-p 'prog-mode)
+      (memq major-mode vsc-edit-prg-modes)))
+
 ;;
 ;; (@* "Backspace" )
 ;;
@@ -134,7 +136,7 @@
 (defun vsc-edit-backspace ()
   "Backspace."
   (interactive)
-  (if (derived-mode-p 'prog-mode)
+  (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-backspace)
     (vsc-edit-real-backspace)))
 
@@ -207,7 +209,7 @@
 (defun vsc-edit-delete ()
   "Delete."
   (interactive)
-  (if (derived-mode-p 'prog-mode)
+  (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-delete)
     (vsc-edit-real-delete)))
 
@@ -235,7 +237,7 @@
 (defun vsc-edit-space ()
   "Space."
   (interactive)
-  (if (derived-mode-p 'prog-mode)
+  (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-space)
     (vsc-edit-real-space)))
 
