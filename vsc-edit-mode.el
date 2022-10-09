@@ -35,7 +35,7 @@
 
 (require 'indent-control)
 
-(defgroup vsc-edit-mode nil
+(defgroup vsc-edit nil
   "Implement editing experience like VSCode."
   :prefix "vsc-edit-mode-"
   :group 'tool
@@ -47,146 +47,215 @@
 
 (defvar vsc-edit-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<backspace>") #'vsc-edit-mode-backspace)
-    (define-key map (kbd "S-<backspace>") #'vsc-edit-mode-backspace)
-    (define-key map (kbd "<delete>") #'execrun-previous)
-    (define-key map (kbd "S-<delete>") #'execrun-next)
+    (define-key map (kbd "<backspace>") #'vsc-edit-backspace)
+    (define-key map (kbd "S-<backspace>") #'vsc-edit-backspace)
+    (define-key map (kbd "<delete>") #'vsc-edit-delete)
+    (define-key map (kbd "SPC") #'vsc-edit-space)
+    (define-key map (kbd "S-SPC") #'vsc-edit-space)
+    (define-key map (kbd "C-v") #'vsc-edit-yank)
     map)
   "Keymap for `execrun-mode'.")
 
 (defun vsc-edit-mode--enable ()
-  "Enable `vsc-edit-mode'."
+  "Enable `vsc-edit'."
   )
 
 (defun vsc-edit-mode--disable ()
-  "Disable `vsc-edit-mode'."
+  "Disable `vsc-edit'."
   )
 
 ;;;###autoload
 (define-minor-mode vsc-edit-mode
-  "Minor mode `vsc-edit-mode'."
-  :group vsc-edit-mode
+  "Minor mode `vsc-edit'."
+  :group vsc-edit
   :lighter nil
   :keymap vsc-edit-mode-map
-  (if vsc-edit-mode (vsc-edit-mode--enable) (vsc-edit-mode--disable)))
+  (if vsc-edit (vsc-edit-mode--enable) (vsc-edit-mode--disable)))
 
 (defun vsc-edit-mode--turn-on ()
-  "Turn on the `vsc-edit-mode'."
-  (vsc-edit-mode 1))
+  "Turn on the `vsc-edit'."
+  (vsc-edit 1))
 
 ;;;###autoload
 (define-globalized-minor-mode global-vsc-edit-mode
-  vsc-edit-mode vsc-edit-mode--turn-on
-  :require 'vsc-edit-mode)
+  vsc-edit vsc-edit-mode--turn-on
+  :require 'vsc-edit)
 
 ;;
 ;; (@* "Util" )
 ;;
 
-(defun vsc-edit-mode--before-first-char-at-line-p (&optional pt)
+(defun vsc-edit--before-first-char-at-line-p (&optional pt)
   "Return non-nil if there is nothing infront of the right from the PT."
   (save-excursion
     (when pt (goto-char pt))
     (null (re-search-backward "[^ \t]" (line-beginning-position) t))))
 
+(defun vsc-edit--current-line-empty-p ()
+  "Current line empty, but accept spaces/tabs in there.  (not absolute)."
+  (save-excursion (beginning-of-line) (looking-at "[[:space:]\t]*$")))
+
+(defun vsc-edit--first-char-in-line-column ()
+  "Return column in first character in line."
+  (save-excursion (back-to-indentation) (current-column)))
+
+(defun vsc-edit--get-current-char-string ()
+  "Get the current character as the 'string'."
+  (if (char-before) (string (char-before)) ""))
+
+(defun vsc-edit--current-char-equal-p (c)
+  "Check the current character equal to C, C can be a list of character."
+  (cond ((and (stringp c) (stringp (vsc-edit--get-current-char-string)))
+         (string= (vsc-edit--get-current-char-string) c))
+        ((listp c) (member (vsc-edit--get-current-char-string) c))))
+
+(defun vsc-edit--current-whitespace-p ()
+  "Check if current character a whitespace character."
+  (vsc-edit--current-char-equal-p " "))
+
 ;;
 ;; (@* "Backspace" )
 ;;
 
-(defun vsc-edit-mode-real-backspace ()
+(defun vsc-edit-real-backspace ()
   "Just backspace a char."
   (interactive)
-  (call-interactively (if electric-pair-mode #'electric-pair-delete-pair
-                        #'backward-delete-char-untabify)))
+  (call-interactively (key-binding (kbd "\177"))))
 
-(defun vsc-edit-mode-smart-backspace ()
+(defun vsc-edit-smart-backspace ()
   "Smart backspace."
   (interactive)
-  (or (and (vsc-edit-mode--before-first-char-at-line-p) (not (bolp))
+  (or (and (vsc-edit--before-first-char-at-line-p) (not (bolp))
            (not (use-region-p))
-           (jcs-backward-delete-spaces-by-indent-level))
-      (vsc-edit-mode-real-backspace)))
+           (vsc-edit--backward-delete-spaces-by-indent-level))
+      (vsc-edit-real-backspace)))
 
 ;;;###autoload
-(defun vsc-edit-mode-backspace ()
+(defun vsc-edit-backspace ()
   "Backspace."
   (interactive)
   (if (derived-mode-p 'prog-mode)
-      (vsc-edit-mode-smart-backspace)
-    (vsc-edit-mode-real-backspace)))
+      (vsc-edit-smart-backspace)
+    (vsc-edit-real-backspace)))
+
+;;
+;; (@* "Indentation" )
+;;
+
+(defun vsc-edit--insert-spaces-by-indent-level ()
+  "Insert spaces depends on indentation level configuration."
+  (interactive)
+  (let* ((count 0)
+         (indent-lvl (indent-control-get-indent-level-by-mode))
+         (remainder (% (current-column) indent-lvl))
+         (target-width (if (= remainder 0) indent-lvl (- indent-lvl remainder))))
+    (while (< count target-width)
+      (insert " ")
+      (cl-incf count))))
+
+(defun vsc-edit--backward-delete-spaces-by-indent-level ()
+  "Backward delete spaces using indentation level."
+  (interactive)
+  (let* ((count 0)
+         (indent-lvl (indent-control-get-indent-level-by-mode))
+         (remainder (% (current-column) indent-lvl))
+         (target-width (if (= remainder 0) indent-lvl remainder))
+         success)
+    (while (and (< count target-width)
+                (not (bolp))
+                (vsc-edit--current-whitespace-p))
+      (backward-delete-char 1)
+      (setq success t)
+      (cl-incf count))
+    success))
+
+(defun vsc-edit--forward-delete-spaces-by-indent-level ()
+  "Forward delete spaces using indentation level."
+  (interactive)
+  (let* ((count 0)
+         (indent-lvl (indent-control-get-indent-level-by-mode))
+         (remainder (% (vsc-edit--first-char-in-line-column) indent-lvl))
+         (target-width (if (= remainder 0) indent-lvl remainder))
+         success)
+    (while (and (< count target-width) (not (eolp)))
+      (let (is-valid)
+        (save-excursion
+          (forward-char 1)
+          (when (vsc-edit--current-whitespace-p) (setq is-valid t)))
+        (when is-valid (backward-delete-char -1) (setq success t)))
+      (cl-incf count))
+    success))
 
 ;;
 ;; (@* "Delete" )
 ;;
 
-(defun vsc-edit-mode-real-delete ()
+(defun vsc-edit-real-delete ()
   "Just delete a char."
   (interactive)
-  (jcs-electric-delete))
+  (call-interactively (key-binding (kbd "<deletechar>"))))
 
-(defun vsc-edit-mode-smart-delete ()
+(defun vsc-edit-smart-delete ()
   "Smart backspace."
   (interactive)
   (or (and (not (eobp))
-           (vsc-edit-mode--before-first-char-at-line-p (1+ (point)))
-           (jcs-forward-delete-spaces-by-indent-level))
-      (vsc-edit-mode-real-delete)))
+           (vsc-edit--before-first-char-at-line-p (1+ (point)))
+           (vsc-edit--forward-delete-spaces-by-indent-level))
+      (vsc-edit-real-delete)))
 
 ;;;###autoload
-(defun vsc-edit-mode-delete ()
+(defun vsc-edit-delete ()
   "Delete."
   (interactive)
   (if (derived-mode-p 'prog-mode)
-      (vsc-edit-mode-smart-delete)
-    (vsc-edit-mode-real-delete)))
+      (vsc-edit-smart-delete)
+    (vsc-edit-real-delete)))
 
 ;;
 ;; (@* "Space" )
 ;;
 
-(defun jcs-insert-spaces-by-indent-level ()
-  "Insert spaces depends on indentation level configuration."
+(defun vsc-edit-real-space ()
+  "Just insert a space."
   (interactive)
-  (let* ((tmp-count 0)
-         (indent-lvl (indent-control-get-indent-level-by-mode))
-         (remainder (% (current-column) indent-lvl))
-         (target-width (if (= remainder 0) indent-lvl (- indent-lvl remainder))))
-    (while (< tmp-count target-width)
-      (insert " ")
-      (setq tmp-count (1+ tmp-count)))))
+  (insert " "))
 
-(defun jcs-backward-delete-spaces-by-indent-level ()
-  "Backward delete spaces using indentation level."
+(defun vsc-edit-smart-space ()
+  "Smart way of inserting space."
   (interactive)
-  (let* ((tmp-count 0)
-         (indent-lvl (indent-control-get-indent-level-by-mode))
-         (remainder (% (current-column) indent-lvl))
-         (target-width (if (= remainder 0) indent-lvl remainder))
-         success)
-    (while (and (< tmp-count target-width)
-                (not (bolp))
-                (jcs-current-whitespace-p))
-      (backward-delete-char 1)
-      (setq success t
-            tmp-count (1+ tmp-count)))
-    success))
+  (if (vsc-edit--current-line-empty-p)
+      (let ((pt (point)))
+        (ignore-errors (indent-for-tab-command))
+        (when (= pt (point)) (vsc-edit-real-space)))
+    (if (or (vsc-edit--before-first-char-at-line-p) (bolp))
+        (vsc-edit--insert-spaces-by-indent-level)
+      (vsc-edit-real-space))))
 
-(defun jcs-forward-delete-spaces-by-indent-level ()
-  "Forward delete spaces using indentation level."
+;;;###autoload
+(defun vsc-edit-space ()
+  "Space."
   (interactive)
-  (let* ((tmp-count 0)
-         (indent-lvl (indent-control-get-indent-level-by-mode))
-         (remainder (% (jcs-first-char-in-line-column) indent-lvl))
-         (target-width (if (= remainder 0) indent-lvl remainder))
-         success)
-    (while (and (< tmp-count target-width) (not (eolp)))
-      (let ((is-valid nil))
-        (save-excursion
-          (forward-char 1)
-          (when (jcs-current-whitespace-p) (setq is-valid t)))
-        (when is-valid (backward-delete-char -1) (setq success t)))
-      (setq tmp-count (1+ tmp-count)))
-    success))
+  (if (derived-mode-p 'prog-mode)
+      (vsc-edit-smart-space)
+    (vsc-edit-real-space)))
 
-(provide 'vsc-edit-mode)
+;;
+;; (@* "Yank" )
+;;
+
+(defun vsc-edit-delete-region ()
+  "Delete region by default value."
+  (when (use-region-p) (delete-region (region-beginning) (region-end))))
+
+;;;###autoload
+(defun vsc-edit-yank ()
+  "Yank and then indent region."
+  (interactive)
+  (msgu-silent
+    (vsc-edit-delete-region)
+    (let ((reg-beg (point)))
+      (call-interactively #'yank)
+      (ignore-errors (indent-region reg-beg (point))))))
+
+(provide 'vsc-edit)
 ;;; vsc-edit-mode.el ends here
