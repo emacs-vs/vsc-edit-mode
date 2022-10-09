@@ -6,6 +6,16 @@
 
 [![CI](https://github.com/emacs-vs/vsc-edit-mode/actions/workflows/test.yml/badge.svg)](https://github.com/emacs-vs/vsc-edit-mode/actions/workflows/test.yml)
 
+## 🔨 Usage
+
+Place the following code to your `init.el`:
+
+```elisp
+(vsc-edit-mode 1)
+```
+
+Or just `M-x vsc-edit-mode`!
+
 ## Contribute
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
