@@ -89,6 +89,10 @@
 ;; (@* "Util" )
 ;;
 
+(defun vsc-edit--in-comment-or-string-p ()
+  "Return non-nil if inside comment or string."
+  (or (nth 4 (syntax-ppss)) (nth 8 (syntax-ppss))))
+
 (defun vsc-edit--before-first-char-at-line-p (&optional pt)
   "Return non-nil if there is nothing infront of the right from the PT."
   (save-excursion
@@ -236,7 +240,8 @@
       (let ((pt (point)))
         (ignore-errors (indent-for-tab-command))
         (when (= pt (point)) (vsc-edit-real-space)))
-    (if (or (vsc-edit--before-first-char-at-line-p) (bolp))
+    (if (and (or (vsc-edit--before-first-char-at-line-p) (bolp))
+             (not (vsc-edit--in-comment-or-string-p)))
         (vsc-edit--insert-spaces-by-indent-level)
       (vsc-edit-real-space))))
 
