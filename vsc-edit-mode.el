@@ -71,11 +71,11 @@
 
 (defun vsc-edit-mode--turn-on ()
   "Turn on the `vsc-edit'."
-  (vsc-edit 1))
+  (vsc-edit-mode 1))
 
 ;;;###autoload
 (define-globalized-minor-mode global-vsc-edit-mode
-  vsc-edit vsc-edit-mode--turn-on
+  vsc-edit-mode vsc-edit-mode--turn-on
   :require 'vsc-edit)
 
 ;;
@@ -97,7 +97,7 @@
   (save-excursion (back-to-indentation) (current-column)))
 
 (defun vsc-edit--get-current-char-string ()
-  "Get the current character as the 'string'."
+  "Get the current character as the `string''."
   (if (char-before) (string (char-before)) ""))
 
 (defun vsc-edit--current-char-equal-p (c)
@@ -259,5 +259,5 @@
       (call-interactively #'yank)
       (ignore-errors (indent-region reg-beg (point))))))
 
-(provide 'vsc-edit)
+(provide 'vsc-edit-mode)
 ;;; vsc-edit-mode.el ends here
