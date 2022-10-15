@@ -72,8 +72,8 @@
 ;;;###autoload
 (define-minor-mode vsc-edit-mode
   "Minor mode `vsc-edit'."
+  :lighter " VSC-Edit"
   :group vsc-edit
-  :lighter nil
   :keymap vsc-edit-mode-map)
 
 (defun vsc-edit-mode--turn-on ()
