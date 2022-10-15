@@ -14,6 +14,7 @@
 (depends-on "emacs" "26.1")
 (depends-on "msgu")
 (depends-on "indent-control")
+(depends-on "mwim")
 (depends-on "company")
 (depends-on "yasnippet")
 
