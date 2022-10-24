@@ -270,7 +270,8 @@
     (vsc-edit-delete-region)
     (let ((reg-beg (point)))
       (call-interactively #'yank)
-      (ignore-errors (indent-region reg-beg (point))))))
+      (when (vsc-edit-prog-mode-p)
+        (ignore-errors (indent-region reg-beg (point)))))))
 
 ;;
 ;; (@* "Backspace" )
