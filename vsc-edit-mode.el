@@ -140,7 +140,6 @@
   "Smart backspace."
   (interactive)
   (or (and (vsc-edit--before-first-char-at-line-p) (not (bolp))
-           (not (use-region-p))
            (vsc-edit--backward-delete-spaces-by-indent-level))
       (vsc-edit-real-backspace)))
 
@@ -148,9 +147,12 @@
 (defun vsc-edit-backspace ()
   "Backspace."
   (interactive)
-  (if (vsc-edit-prog-mode-p)
-      (vsc-edit-smart-backspace)
-    (vsc-edit-real-backspace)))
+  (cond ((use-region-p)
+         (delete-region (region-beginning) (region-end)))
+        ((vsc-edit-prog-mode-p)
+         (vsc-edit-smart-backspace))
+        (t
+         (vsc-edit-real-backspace))))
 
 ;;
 ;; (@* "Indentation" )
@@ -221,9 +223,12 @@
 (defun vsc-edit-delete ()
   "Delete."
   (interactive)
-  (if (vsc-edit-prog-mode-p)
-      (vsc-edit-smart-delete)
-    (vsc-edit-real-delete)))
+  (cond ((use-region-p)
+         (delete-region (region-beginning) (region-end)))
+        ((vsc-edit-prog-mode-p)
+         (vsc-edit-smart-delete))
+        (t
+         (vsc-edit-real-delete))))
 
 ;;
 ;; (@* "Space" )
@@ -250,6 +255,7 @@
 (defun vsc-edit-space ()
   "Space."
   (interactive)
+  (vsc-edit-delete-region)
   (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-space)
     (vsc-edit-real-space)))
