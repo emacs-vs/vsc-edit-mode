@@ -140,6 +140,7 @@
   "Smart backspace."
   (interactive)
   (or (and (vsc-edit--before-first-char-at-line-p) (not (bolp))
+           (not (use-region-p))
            (vsc-edit--backward-delete-spaces-by-indent-level))
       (vsc-edit-real-backspace)))
 
