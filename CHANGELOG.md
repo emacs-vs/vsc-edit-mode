@@ -12,6 +12,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 * Don't insert indent spaces in comment/string (d420349dd0272c27af9b297ad31901c710d50485)
 * Add BOL/EOL keys (27cc0f8f0e08a02cc31952411d9977eb5f33f8e5)
 * Don't yank indent on non-`prog-mode` (28ca56adf553bb3958b7c52332ce90855646588d)
+* Handle region for backspace/delete commands (88b508c78a08e8e71abdf01dc8314f9be04b7a4c)
 
 ## 0.1.0
 > Released Oct 09, 2022
