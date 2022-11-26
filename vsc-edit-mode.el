@@ -123,7 +123,7 @@
   (vsc-edit--current-char-equal-p " "))
 
 (defun vsc-edit-prog-mode-p ()
-  "Return non-nil if current buffer is programmer mode."
+  "Return non-nil if current buffer is programming mode."
   (or (derived-mode-p 'prog-mode)
       (memq major-mode vsc-edit-prog-modes)))
 
