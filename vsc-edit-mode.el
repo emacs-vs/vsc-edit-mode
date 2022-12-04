@@ -51,6 +51,11 @@
   :type 'list
   :group 'vsc-edit)
 
+(defcustom vsc-edit-insert-tab-on-tab nil
+  "Insert a tab when tab key instead of the local command."
+  :type 'boolean
+  :group 'vsc-edit)
+
 ;;
 ;; (@* "Entry" )
 ;;
@@ -309,9 +314,8 @@
               end (+ end delta)))
       (forward-line 1))))
 
-;;;###autoload
-(defun vsc-edit-tab ()
-  "Global TAB key."
+(defun vsc-edit-smart-tab ()
+  "`prog-mode' tab."
   (interactive)
   (if (use-region-p)
       (vsc-edit--lines-in-region
@@ -328,8 +332,15 @@
           (vsc-edit--insert-spaces-by-indent-level))))))
 
 ;;;###autoload
-(defun vsc-edit-shift-tab ()
-  "Global Shift+TAB key."
+(defun vsc-edit-tab ()
+  "Global TAB key."
+  (interactive)
+  (if (or (vsc-edit-prog-mode-p) vsc-edit-insert-tab-on-tab)
+      (vsc-edit-smart-tab)
+    (funcall-interactively (local-key-binding (kbd "TAB")))))
+
+(defun vsc-edit-smart-shift-tab ()
+  "`prog-mode' shift tab."
   (interactive)
   (if (use-region-p)
       (vsc-edit--lines-in-region
@@ -345,6 +356,14 @@
               (indent-for-tab-command)
               (when (= pt (point)) (vsc-edit--backward-delete-spaces-by-indent-level)))
           (vsc-edit--backward-delete-spaces-by-indent-level))))))
+
+;;;###autoload
+(defun vsc-edit-shift-tab ()
+  "Global Shift+TAB key."
+  (interactive)
+  (if (vsc-edit-prog-mode-p)
+      (vsc-edit-smart-shift-tab)
+    (funcall-interactively (local-key-binding [S-tab]))))
 
 ;;
 ;; (@* "BOL and EOL" )
