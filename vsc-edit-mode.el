@@ -274,6 +274,16 @@
   "Delete region by default value."
   (when (use-region-p) (delete-region (region-beginning) (region-end))))
 
+(defcustom vsc-edit-yank-ignore-modes
+  '( makefile-mode
+     makefile-automake-mode makefile-gmake-mode makefile-bsdmake-mode
+     makefile-makepp-mode makefile-imake-mode
+     python-mode
+     yaml-mode)
+  "List of major-modes ignore indent after `yank' command."
+  :type 'list
+  :group 'vsc-edit)
+
 ;;;###autoload
 (defun vsc-edit-yank ()
   "Yank and then indent region."
@@ -282,7 +292,8 @@
     (vsc-edit-delete-region)
     (let ((reg-beg (point)))
       (call-interactively #'yank)
-      (when (vsc-edit-prog-mode-p)
+      (when (and (vsc-edit-prog-mode-p)
+                 (not (memq major-mode vsc-edit-yank-ignore-modes)))
         (ignore-errors (indent-region reg-beg (point)))))))
 
 ;;
