@@ -1,6 +1,6 @@
 ;;; vsc-edit-mode.el --- Implement editing experience like VSCode  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2022  Shen, Jen-Chieh
+;; Copyright (C) 2022-2023  Shen, Jen-Chieh
 
 ;; Author: Shen, Jen-Chieh <jcs090218@gmail.com>
 ;; Maintainer: Shen, Jen-Chieh <jcs090218@gmail.com>
@@ -94,6 +94,10 @@
 ;;
 ;; (@* "Util" )
 ;;
+
+(defun vsc-edit-delete-region ()
+  "Delete region by default value."
+  (when (use-region-p) (delete-region (region-beginning) (region-end))))
 
 (defun vsc-edit--in-comment-or-string-p ()
   "Return non-nil if inside comment or string."
@@ -270,9 +274,12 @@
 ;; (@* "Yank" )
 ;;
 
-(defun vsc-edit-delete-region ()
-  "Delete region by default value."
-  (when (use-region-p) (delete-region (region-beginning) (region-end))))
+(defun vsc-edit-yank-indent ()
+  "Yank and indent."
+  (interactive)
+  (let ((reg-beg (point)))
+    (call-interactively #'yank)
+    (ignore-errors (indent-region reg-beg (point)))))
 
 (defcustom vsc-edit-yank-ignore-modes
   '( makefile-mode
@@ -290,11 +297,10 @@
   (interactive)
   (msgu-silent
     (vsc-edit-delete-region)
-    (let ((reg-beg (point)))
-      (call-interactively #'yank)
-      (when (and (vsc-edit-prog-mode-p)
-                 (not (memq major-mode vsc-edit-yank-ignore-modes)))
-        (ignore-errors (indent-region reg-beg (point)))))))
+    (if (or (not (vsc-edit-prog-mode-p))
+            (memq major-mode vsc-edit-yank-ignore-modes))
+        (call-interactively #'yank)
+      (call-interactively #'vsc-edit-yank-indent))))
 
 ;;
 ;; (@* "Backspace" )
