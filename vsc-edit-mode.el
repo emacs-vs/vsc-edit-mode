@@ -283,7 +283,8 @@
     (ignore-errors (indent-region reg-beg (point)))))
 
 (defcustom vsc-edit-yank-ignore-modes
-  '( makefile-mode
+  '( fasm-mode masm-mode nasm-mode
+     makefile-mode
      makefile-automake-mode makefile-gmake-mode makefile-bsdmake-mode
      makefile-makepp-mode makefile-imake-mode
      python-mode
