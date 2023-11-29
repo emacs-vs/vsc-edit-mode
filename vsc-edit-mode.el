@@ -46,7 +46,7 @@
   :link '(url-link :tag "Repository" "https://github.com/emacs-vs/vsc-edit-mode"))
 
 (defcustom vsc-edit-prog-modes
-  '(actionscript-mode haxe-mode nxml-mode yaml-mode)
+  '( actionscript-mode haxe-mode nxml-mode yaml-mode)
   "List of extra `prog-mode'."
   :type 'list
   :group 'vsc-edit)
@@ -287,6 +287,7 @@
      makefile-mode
      makefile-automake-mode makefile-gmake-mode makefile-bsdmake-mode
      makefile-makepp-mode makefile-imake-mode
+     mermaid-mode
      python-mode
      yaml-mode)
   "List of major-modes ignore indent after `yank' command."
