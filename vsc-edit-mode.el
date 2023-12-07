@@ -284,6 +284,7 @@
 
 (defcustom vsc-edit-yank-ignore-modes
   '( fasm-mode masm-mode nasm-mode
+     llvm-mode llvm-mir-mode tablegen-mode
      makefile-mode
      makefile-automake-mode makefile-gmake-mode makefile-bsdmake-mode
      makefile-makepp-mode makefile-imake-mode
