@@ -93,8 +93,22 @@
   :require 'vsc-edit)
 
 ;;
+;; (@* "Externals" )
+;;
+
+(declare-function lsp-format-region "ext:lsp-mode.el")
+
+;;
 ;; (@* "Util" )
 ;;
+
+(defmacro vsc-edit--handle-lsp-indent (&rest body)
+  "Execute BODY without the `lsp-mode' indent interfering."
+  (declare (indent 0) (debug t))
+  `(progn
+     (remove-function (local 'indent-region-function) #'lsp-format-region)
+     ,@body
+     (add-function :override (local 'indent-region-function) #'lsp-format-region)))
 
 (defun vsc-edit-delete-region ()
   "Delete region by default value."
@@ -280,7 +294,8 @@
   (interactive)
   (let ((reg-beg (point)))
     (call-interactively #'yank)
-    (ignore-errors (indent-region reg-beg (point)))))
+    (vsc-edit--handle-lsp-indent
+      (ignore-errors (indent-region reg-beg (point))))))
 
 (defcustom vsc-edit-yank-ignore-modes
   '( fasm-mode masm-mode nasm-mode
