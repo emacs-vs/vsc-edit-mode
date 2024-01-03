@@ -96,7 +96,10 @@
 ;; (@* "Externals" )
 ;;
 
+(defvar lsp-enable-indentation)
+
 (declare-function lsp-format-region "ext:lsp-mode.el")
+(declare-function lsp-feature? "ext:lsp-mode.el")
 
 ;;
 ;; (@* "Util" )
@@ -108,7 +111,10 @@
   `(progn
      (remove-function (local 'indent-region-function) #'lsp-format-region)
      ,@body
-     (add-function :override (local 'indent-region-function) #'lsp-format-region)))
+     (when (and (featurep 'lsp-mode)
+                lsp-enable-indentation
+                (lsp-feature? "textDocument/rangeFormatting"))
+       (add-function :override (local 'indent-region-function) #'lsp-format-region))))
 
 (defun vsc-edit-delete-region ()
   "Delete region by default value."
