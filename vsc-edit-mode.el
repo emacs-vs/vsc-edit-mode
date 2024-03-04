@@ -377,9 +377,11 @@
 (defun vsc-edit-tab ()
   "Global TAB key."
   (interactive)
-  (if (or (vsc-edit-prog-mode-p) vsc-edit-insert-tab-on-tab)
-      (vsc-edit-smart-tab)
-    (funcall-interactively (local-key-binding (kbd "TAB")))))
+  (or (and yas-minor-mode
+           (ignore-errors (yas-next-field-or-maybe-expand) t))
+      (if (or (vsc-edit-prog-mode-p) vsc-edit-insert-tab-on-tab)
+          (vsc-edit-smart-tab)
+        (execute-kbd-macro (kbd "TAB")))))
 
 (defun vsc-edit-smart-shift-tab ()
   "`prog-mode' shift tab."
@@ -405,7 +407,7 @@
   (interactive)
   (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-shift-tab)
-    (funcall-interactively (local-key-binding [S-tab]))))
+    (execute-kbd-macro [S-tab])))
 
 ;;
 ;; (@* "BOL and EOL" )
