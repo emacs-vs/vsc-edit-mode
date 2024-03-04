@@ -14,6 +14,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 * Don't yank indent on non-`prog-mode` (28ca56adf553bb3958b7c52332ce90855646588d)
 * Handle region for backspace/delete commands (88b508c78a08e8e71abdf01dc8314f9be04b7a4c)
 * Add variable to ignore indentation after `yank` command (835342339a5866b51bc4c7043ed83c82052c1070)
+* fix: Respect `yasnippet` when using tab (72fc48e67300c1a36f14e783a8b35db803d97469)
 
 ## 0.1.0
 > Released Oct 09, 2022
