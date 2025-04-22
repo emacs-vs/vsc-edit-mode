@@ -1,3 +1,5 @@
+;; -*- mode: eask; lexical-binding: t -*-
+
 (package "vsc-edit-mode"
          "0.1.0"
          "Implement editing experience like VSCode")
