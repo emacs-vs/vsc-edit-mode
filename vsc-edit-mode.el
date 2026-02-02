@@ -63,11 +63,11 @@
 (defvar vsc-edit-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<backspace>") #'vsc-edit-backspace)
-    (define-key map (kbd "S-<backspace>") #'vsc-edit-real-backspace)
+    (define-key map (kbd "S-<backspace>") #'vsc-edit-default-backspace)
     (define-key map (kbd "<delete>") #'vsc-edit-delete)
-    (define-key map (kbd "S-<delete>") #'vsc-edit-real-delete)
+    (define-key map (kbd "S-<delete>") #'vsc-edit-default-delete)
     (define-key map (kbd "SPC") #'vsc-edit-space)
-    (define-key map (kbd "S-SPC") #'vsc-edit-real-space)
+    (define-key map (kbd "S-SPC") #'vsc-edit-default-space)
     (define-key map (kbd "C-v") #'vsc-edit-yank)
     (define-key map [tab] #'vsc-edit-tab)
     (define-key map (kbd "TAB") #'vsc-edit-tab)
@@ -161,7 +161,7 @@
 ;; (@* "Backspace" )
 ;;
 
-(defun vsc-edit-real-backspace ()
+(defun vsc-edit-default-backspace ()
   "Just backspace a char."
   (interactive)
   (call-interactively (key-binding (kbd "\177"))))
@@ -172,7 +172,7 @@
   (or (and (vsc-edit--before-first-char-at-line-p) (not (bolp))
            (not (use-region-p))
            (vsc-edit--backward-delete-spaces-by-indent-level))
-      (vsc-edit-real-backspace)))
+      (vsc-edit-default-backspace)))
 
 ;;;###autoload
 (defun vsc-edit-backspace ()
@@ -183,7 +183,7 @@
         ((vsc-edit-prog-mode-p)
          (vsc-edit-smart-backspace))
         (t
-         (vsc-edit-real-backspace))))
+         (vsc-edit-default-backspace))))
 
 ;;
 ;; (@* "Indentation" )
@@ -237,7 +237,7 @@
 ;; (@* "Delete" )
 ;;
 
-(defun vsc-edit-real-delete ()
+(defun vsc-edit-default-delete ()
   "Just delete a char."
   (interactive)
   (call-interactively (key-binding (kbd "<deletechar>"))))
@@ -248,7 +248,7 @@
   (or (and (not (eobp))
            (vsc-edit--before-first-char-at-line-p (1+ (point)))
            (vsc-edit--forward-delete-spaces-by-indent-level))
-      (vsc-edit-real-delete)))
+      (vsc-edit-default-delete)))
 
 ;;;###autoload
 (defun vsc-edit-delete ()
@@ -259,13 +259,13 @@
         ((vsc-edit-prog-mode-p)
          (vsc-edit-smart-delete))
         (t
-         (vsc-edit-real-delete))))
+         (vsc-edit-default-delete))))
 
 ;;
 ;; (@* "Space" )
 ;;
 
-(defun vsc-edit-real-space ()
+(defun vsc-edit-default-space ()
   "Just insert a space."
   (interactive)
   (insert " "))
@@ -276,11 +276,11 @@
   (if (vsc-edit--current-line-empty-p)
       (let ((pt (point)))
         (ignore-errors (indent-for-tab-command))
-        (when (= pt (point)) (vsc-edit-real-space)))
+        (when (= pt (point)) (vsc-edit-default-space)))
     (if (and (or (vsc-edit--before-first-char-at-line-p) (bolp))
              (not (vsc-edit--in-comment-or-string-p)))
         (vsc-edit--insert-spaces-by-indent-level)
-      (vsc-edit-real-space))))
+      (vsc-edit-default-space))))
 
 ;;;###autoload
 (defun vsc-edit-space ()
@@ -289,7 +289,7 @@
   (vsc-edit-delete-region)
   (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-space)
-    (vsc-edit-real-space)))
+    (vsc-edit-default-space)))
 
 ;;
 ;; (@* "Yank" )
@@ -356,22 +356,34 @@
               end (+ end delta)))
       (forward-line 1))))
 
+(defun vsc-edit-default-tab ()
+  "The default tab."
+  (interactive)
+  (if (memq last-command '( vsc-edit-default-tab
+                            vsc-edit-tab
+                            vsc-edit-smart-tab))
+      (funcall-interactively (local-key-binding (kbd "TAB")))
+    (execute-kbd-macro (kbd "TAB"))))
+
 (defun vsc-edit-smart-tab ()
   "`prog-mode' tab."
   (interactive)
-  (if (use-region-p)
-      (vsc-edit--lines-in-region
-       (lambda ()
-         (back-to-indentation)
-         (vsc-edit--insert-spaces-by-indent-level)))
-    (unless (ignore-errors (call-interactively #'yas-expand))
-      (if (company--active-p)
-          (call-interactively #'company-complete-selection)
-        (if (vsc-edit--current-line-empty-p)
-            (let ((pt (point)))
-              (indent-for-tab-command)
-              (when (= pt (point)) (vsc-edit--insert-spaces-by-indent-level)))
-          (vsc-edit--insert-spaces-by-indent-level))))))
+  (cond ((use-region-p)
+         (vsc-edit--lines-in-region
+          (lambda ()
+            (back-to-indentation)
+            (vsc-edit--insert-spaces-by-indent-level))))
+        ((ignore-errors (call-interactively #'yas-expand))
+         ;; Do nothing.
+         )
+        ((company--active-p)
+         (call-interactively #'company-complete-selection))
+        (t
+         (if (vsc-edit--current-line-empty-p)
+             (let ((pt (point)))
+               (indent-for-tab-command)
+               (when (= pt (point)) (vsc-edit--insert-spaces-by-indent-level)))
+           (vsc-edit--insert-spaces-by-indent-level)))))
 
 ;;;###autoload
 (defun vsc-edit-tab ()
@@ -379,29 +391,41 @@
   (interactive)
   (or (and yas-minor-mode
            (ignore-errors (yas-next-field-or-maybe-expand) t))
-      (if (or (vsc-edit-prog-mode-p) vsc-edit-insert-tab-on-tab)
+      (if (or (vsc-edit-prog-mode-p)
+              vsc-edit-insert-tab-on-tab)
           (vsc-edit-smart-tab)
-        (if (equal last-command #'vsc-edit-tab)
-            (funcall-interactively (local-key-binding (kbd "TAB")))
-          (execute-kbd-macro (kbd "TAB"))))))
+        (vsc-edit-default-tab))))
+
+(defun vsc-edit-default-shift-tab ()
+  "The default shift tab."
+  (interactive)
+  (if (memq last-command '( vsc-edit-default-shift-tab
+                            vsc-edit-shift-tab
+                            vsc-edit-smart-shift-tab))
+      (funcall-interactively (local-key-binding [S-tab]))
+    (execute-kbd-macro [S-tab])))
 
 (defun vsc-edit-smart-shift-tab ()
   "`prog-mode' shift tab."
   (interactive)
-  (if (use-region-p)
-      (vsc-edit--lines-in-region
-       (lambda ()
-         (back-to-indentation)
-         (let (delete-active-region)
-           (vsc-edit--backward-delete-spaces-by-indent-level))))
-    (unless (ignore-errors (call-interactively #'yas-expand))
-      (if (company--active-p)
-          (call-interactively #'company-complete-selection)
-        (if (vsc-edit--current-line-empty-p)
-            (let ((pt (point)))
-              (indent-for-tab-command)
-              (when (= pt (point)) (vsc-edit--backward-delete-spaces-by-indent-level)))
-          (vsc-edit--backward-delete-spaces-by-indent-level))))))
+  (cond ((use-region-p)
+         (vsc-edit--lines-in-region
+          (lambda ()
+            (back-to-indentation)
+            (let (delete-active-region)
+              (vsc-edit--backward-delete-spaces-by-indent-level)))))
+        ((ignore-errors (call-interactively #'yas-expand))
+         ;; Do nothing.
+         )
+        ((company--active-p)
+         (call-interactively #'company-complete-selection))
+        (t
+         (if (vsc-edit--current-line-empty-p)
+             (let ((pt (point)))
+               (indent-for-tab-command)
+               (when (= pt (point))
+                 (vsc-edit--backward-delete-spaces-by-indent-level)))
+           (vsc-edit--backward-delete-spaces-by-indent-level)))))
 
 ;;;###autoload
 (defun vsc-edit-shift-tab ()
@@ -409,9 +433,7 @@
   (interactive)
   (if (vsc-edit-prog-mode-p)
       (vsc-edit-smart-shift-tab)
-    (if (equal last-command #'vsc-edit-shift-tab)
-        (funcall-interactively (local-key-binding [S-tab]))
-      (execute-kbd-macro [S-tab]))))
+    (vsc-edit-default-shift-tab)))
 
 ;;
 ;; (@* "BOL and EOL" )
